@@ -1,11 +1,7 @@
 /**
  * This module contains a function to convert stored pixel values to display pixel values using a LUT
  */
-(function (cornerstone) {
-
-    "use strict";
-
-    function storedColorPixelDataToCanvasImageData(image, lut, canvasImageDataData)
+export function storedColorPixelDataToCanvasImageData(image, lut, canvasImageDataData)
     {
         var minPixelValue = image.minPixelValue;
         var canvasImageDataIndex = 0;
@@ -39,9 +35,4 @@
             }
         })();
     }
-
-    // Module exports
-    cornerstone.internal.storedColorPixelDataToCanvasImageData = storedColorPixelDataToCanvasImageData;
-    cornerstone.storedColorPixelDataToCanvasImageData = storedColorPixelDataToCanvasImageData;
-
-}(cornerstone));
+}
