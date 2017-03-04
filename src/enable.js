@@ -67,9 +67,10 @@
                     renderTimeInMs: diff
                 };
 
+                var event = new CustomEvent("CornerstoneImageRendered", {detail: eventData});
                 el.invalid = false;
                 el.needsRedraw = false;
-                $(el.element).trigger("CornerstoneImageRendered", eventData);
+                el.element.dispatchEvent(event);
             }
 
             cornerstone.requestAnimationFrame(draw);

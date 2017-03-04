@@ -27,6 +27,7 @@
     }
 
     function purgeCacheIfNecessary() {
+
         // if max cache size has not been exceeded, do nothing
         if (cacheSizeInBytes <= maximumSizeInBytes) {
             return;
@@ -52,11 +53,11 @@
 
             removeImagePromise(imageId);
 
-            $(cornerstone).trigger('CornerstoneImageCachePromiseRemoved', {imageId: imageId});
+            cornerstone.dispatchEvent('CornerstoneImageCachePromiseRemoved', {imageId: imageId});
         }
 
         var cacheInfo = cornerstone.imageCache.getCacheInfo();
-        $(cornerstone).trigger('CornerstoneImageCacheFull', cacheInfo);
+        cornerstone.dispatchEvent("CornerstoneImageCacheFull", cacheInfo);
     }
 
     function putImagePromise(imageId, imagePromise) {
