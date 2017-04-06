@@ -37,9 +37,9 @@ function setCanvasSize(element, canvas)
 /**
  * resizes an enabled element and optionally fits the image to window
  * @param element
- * @param fitToWindow true to refit, false to leave viewport parameters as they are
+ * @param fitViewportToWindow true to refit, false to leave viewport parameters as they are
  */
-export function resize(element, fitToWindow) {
+export function resize(element, fitViewportToWindow) {
 
     var enabledElement = getEnabledElement(element);
 
@@ -49,7 +49,7 @@ export function resize(element, fitToWindow) {
         return;
     }
 
-    if(fitToWindow === true) {
+    if(fitViewportToWindow === true) {
         fitToWindow(element);
     }
     else {

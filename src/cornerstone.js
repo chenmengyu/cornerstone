@@ -70,3 +70,5 @@ export const imageCache = {
 };
 import { addProvider, removeProvider, get } from './metaData.js';
 export const metaData = { addProvider, removeProvider, get };
+
+export { webGL } from './webgl/index.js';

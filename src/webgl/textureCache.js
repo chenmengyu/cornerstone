@@ -2,154 +2,147 @@
  * This module deals with caching image textures in VRAM for WebGL
  */
 
-(function (cornerstone) {
+export const imageCache = {};
 
-    "use strict";
+export const cachedImages = [];
 
-    var imageCache = {};
+var maximumSizeInBytes = 1024 * 1024 * 256; // 256 MB
+var cacheSizeInBytes = 0;
 
-    var cachedImages = [];
-
-    var maximumSizeInBytes = 1024 * 1024 * 256; // 256 MB
-    var cacheSizeInBytes = 0;
-
-    function setMaximumSizeBytes(numBytes) {
-        if (numBytes === undefined) {
-            throw "setMaximumSizeBytes: parameter numBytes must not be undefined";
-        }
-        if (numBytes.toFixed === undefined) {
-            throw "setMaximumSizeBytes: parameter numBytes must be a number";
-        }
-
-        maximumSizeInBytes = numBytes;
-        purgeCacheIfNecessary();
+export function setMaximumSizeBytes(numBytes) {
+    if (numBytes === undefined) {
+        throw "setMaximumSizeBytes: parameter numBytes must not be undefined";
+    }
+    if (numBytes.toFixed === undefined) {
+        throw "setMaximumSizeBytes: parameter numBytes must be a number";
     }
 
-    function purgeCacheIfNecessary() {
-        // if max cache size has not been exceeded, do nothing
-        if (cacheSizeInBytes <= maximumSizeInBytes) {
-            return;
-        }
+    maximumSizeInBytes = numBytes;
+    purgeCacheIfNecessary();
+}
 
-        // cache size has been exceeded, create list of images sorted by timeStamp
-        // so we can purge the least recently used image
-        function compare(a,b) {
-            if (a.timeStamp > b.timeStamp) {
-                return -1;
-            }
-            if (a.timeStamp < b.timeStamp) {
-                return 1;
-            }
-            return 0;
-        }
-        cachedImages.sort(compare);
-
-        // remove images as necessary
-        while(cacheSizeInBytes > maximumSizeInBytes) {
-            var lastCachedImage = cachedImages[cachedImages.length - 1];
-            cacheSizeInBytes -= lastCachedImage.sizeInBytes;
-            delete imageCache[lastCachedImage.imageId];
-            cachedImages.pop();
-            $(cornerstone).trigger('CornerstoneWebGLTextureRemoved', {imageId: lastCachedImage.imageId});
-        }
-
-        var cacheInfo = cornerstone.imageCache.getCacheInfo();
-        console.log('CornerstoneWebGLTextureCacheFull');
-        $(cornerstone).trigger('CornerstoneWebGLTextureCacheFull', cacheInfo);
+function purgeCacheIfNecessary() {
+    // if max cache size has not been exceeded, do nothing
+    if (cacheSizeInBytes <= maximumSizeInBytes) {
+        return;
     }
 
-    function putImageTexture(image, imageTexture) {
-        var imageId = image.imageId;
-        if (image === undefined) {
-            throw "putImageTexture: image must not be undefined";
+    // cache size has been exceeded, create list of images sorted by timeStamp
+    // so we can purge the least recently used image
+    function compare(a,b) {
+        if (a.timeStamp > b.timeStamp) {
+            return -1;
         }
-
-        if (imageId === undefined) {
-            throw "putImageTexture: imageId must not be undefined";
+        if (a.timeStamp < b.timeStamp) {
+            return 1;
         }
+        return 0;
+    }
+    cachedImages.sort(compare);
 
-        if (imageTexture === undefined) {
-            throw "putImageTexture: imageTexture must not be undefined";
-        }
-
-        if (imageCache.hasOwnProperty(imageId) === true) {
-            throw "putImageTexture: imageId already in cache";
-        }
-
-        var cachedImage = {
-            imageId : imageId,
-            imageTexture : imageTexture,
-            timeStamp : new Date(),
-            sizeInBytes: imageTexture.sizeInBytes
-        };
-
-        imageCache[imageId] = cachedImage;
-        cachedImages.push(cachedImage);
-
-        if (imageTexture.sizeInBytes === undefined) {
-            throw "putImageTexture: imageTexture does not have sizeInBytes property or";
-        }
-        if (imageTexture.sizeInBytes.toFixed === undefined) {
-            throw "putImageTexture: imageTexture.sizeInBytes is not a number";
-        }
-        cacheSizeInBytes += cachedImage.sizeInBytes;
-        purgeCacheIfNecessary();
+    // remove images as necessary
+    while(cacheSizeInBytes > maximumSizeInBytes) {
+        var lastCachedImage = cachedImages[cachedImages.length - 1];
+        cacheSizeInBytes -= lastCachedImage.sizeInBytes;
+        delete imageCache[lastCachedImage.imageId];
+        cachedImages.pop();
+        $(cornerstone).trigger('CornerstoneWebGLTextureRemoved', {imageId: lastCachedImage.imageId});
     }
 
-    function getImageTexture(imageId) {
-        if (imageId === undefined) {
-            throw "getImageTexture: imageId must not be undefined";
-        }
-        var cachedImage = imageCache[imageId];
-        if (cachedImage === undefined) {
-            return undefined;
-        }
+    var cacheInfo = getCacheInfo();
+    console.log('CornerstoneWebGLTextureCacheFull');
+    $(cornerstone).trigger('CornerstoneWebGLTextureCacheFull', cacheInfo);
+}
 
-        // bump time stamp for cached image
-        cachedImage.timeStamp = new Date();
-        return cachedImage.imageTexture;
+export function putImageTexture(image, imageTexture) {
+    var imageId = image.imageId;
+    if (image === undefined) {
+        throw "putImageTexture: image must not be undefined";
     }
 
-    function removeImageTexture(imageId) {
-        if (imageId === undefined) {
-            throw "removeImageTexture: imageId must not be undefined";
-        }
-        var cachedImage = imageCache[imageId];
-        if (cachedImage === undefined) {
-            throw "removeImageTexture: imageId must not be undefined";
-        }
-        cachedImages.splice( cachedImages.indexOf(cachedImage), 1);
-        cacheSizeInBytes -= cachedImage.sizeInBytes;
-        delete imageCache[imageId];
-
-        return cachedImage.imageTexture;
+    if (imageId === undefined) {
+        throw "putImageTexture: imageId must not be undefined";
     }
 
-    function getCacheInfo() {
-        return {
-            maximumSizeInBytes : maximumSizeInBytes,
-            cacheSizeInBytes : cacheSizeInBytes,
-            numberOfImagesCached: cachedImages.length
-        };
+    if (imageTexture === undefined) {
+        throw "putImageTexture: imageTexture must not be undefined";
     }
 
-    function purgeCache() {
-        while (cachedImages.length > 0) {
-            var removedCachedImage = cachedImages.pop();
-            delete imageCache[removedCachedImage.imageId];
-        }
-        cacheSizeInBytes = 0;
+    if (imageCache.hasOwnProperty(imageId) === true) {
+        throw "putImageTexture: imageId already in cache";
     }
 
-    // module exports
-    cornerstone.webGL.textureCache = {
-        putImageTexture : putImageTexture,
-        getImageTexture: getImageTexture,
-        removeImageTexture: removeImageTexture,
-        setMaximumSizeBytes: setMaximumSizeBytes,
-        getCacheInfo : getCacheInfo,
-        purgeCache: purgeCache,
-        cachedImages: cachedImages
+    var cachedImage = {
+        imageId : imageId,
+        imageTexture : imageTexture,
+        timeStamp : new Date(),
+        sizeInBytes: imageTexture.sizeInBytes
     };
 
-}(cornerstone));
+    imageCache[imageId] = cachedImage;
+    cachedImages.push(cachedImage);
+
+    if (imageTexture.sizeInBytes === undefined) {
+        throw "putImageTexture: imageTexture does not have sizeInBytes property or";
+    }
+    if (imageTexture.sizeInBytes.toFixed === undefined) {
+        throw "putImageTexture: imageTexture.sizeInBytes is not a number";
+    }
+    cacheSizeInBytes += cachedImage.sizeInBytes;
+    purgeCacheIfNecessary();
+}
+
+export function getImageTexture(imageId) {
+    if (imageId === undefined) {
+        throw "getImageTexture: imageId must not be undefined";
+    }
+    var cachedImage = imageCache[imageId];
+    if (cachedImage === undefined) {
+        return undefined;
+    }
+
+    // bump time stamp for cached image
+    cachedImage.timeStamp = new Date();
+    return cachedImage.imageTexture;
+}
+
+export function removeImageTexture(imageId) {
+    if (imageId === undefined) {
+        throw "removeImageTexture: imageId must not be undefined";
+    }
+    var cachedImage = imageCache[imageId];
+    if (cachedImage === undefined) {
+        throw "removeImageTexture: imageId must not be undefined";
+    }
+    cachedImages.splice( cachedImages.indexOf(cachedImage), 1);
+    cacheSizeInBytes -= cachedImage.sizeInBytes;
+    delete imageCache[imageId];
+
+    return cachedImage.imageTexture;
+}
+
+export function getCacheInfo() {
+    return {
+        maximumSizeInBytes : maximumSizeInBytes,
+        cacheSizeInBytes : cacheSizeInBytes,
+        numberOfImagesCached: cachedImages.length
+    };
+}
+
+export function purgeCache() {
+    while (cachedImages.length > 0) {
+        var removedCachedImage = cachedImages.pop();
+        delete imageCache[removedCachedImage.imageId];
+    }
+    cacheSizeInBytes = 0;
+}
+
+export const textureCache = {
+    putImageTexture : putImageTexture,
+    getImageTexture: getImageTexture,
+    removeImageTexture: removeImageTexture,
+    setMaximumSizeBytes: setMaximumSizeBytes,
+    getCacheInfo : getCacheInfo,
+    purgeCache: purgeCache,
+    cachedImages: cachedImages
+};
