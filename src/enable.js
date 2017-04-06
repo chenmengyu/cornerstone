@@ -57,21 +57,21 @@ export function enable(element, options) {
 
             var end = new Date();
             var diff = end - start;
+
+            var eventData = {
+                viewport: el.viewport,
+                element: el.element,
+                image: el.image,
+                enabledElement: el,
+                canvasContext: context,
+                renderTimeInMs: diff
+            };
+
+            var event = new CustomEvent("CornerstoneImageRendered", {detail: eventData});
+            el.invalid = false;
+            el.needsRedraw = false;
+            el.element.dispatchEvent(event);
         }
-
-        var eventData = {
-            viewport: el.viewport,
-            element: el.element,
-            image: el.image,
-            enabledElement: el,
-            canvasContext: context,
-            renderTimeInMs: diff
-        };
-
-        var event = new CustomEvent("CornerstoneImageRendered", {detail: eventData});
-        el.invalid = false;
-        el.needsRedraw = false;
-        el.element.dispatchEvent(event);
 
         requestAnimationFrame(draw);
     }
