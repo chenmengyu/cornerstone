@@ -67,9 +67,9 @@ export function enable(element, options) {
                 renderTimeInMs: diff
             };
 
-            var event = new CustomEvent("CornerstoneImageRendered", {detail: eventData});
             el.invalid = false;
             el.needsRedraw = false;
+            var event = new CustomEvent("CornerstoneImageRendered", {detail: eventData});
             el.element.dispatchEvent(event);
         }
 
